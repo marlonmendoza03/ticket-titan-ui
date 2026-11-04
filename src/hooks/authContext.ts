@@ -1,7 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type AuthUser = {
-  email?: string;
+export type AuthUser = Record<string, unknown> & {
   isLoggedIn: true;
 };
 
@@ -9,7 +8,7 @@ export type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, userData?: Pick<AuthUser, "email">) => void;
+  login: (token: string, userData?: Record<string, unknown>) => void;
   logout: () => void;
 };
 

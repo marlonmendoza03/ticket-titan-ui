@@ -7,25 +7,16 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<AuthUser | null>(() =>
-    localStorage.getItem("app_token")
-      ? {
-          email: localStorage.getItem("app_email") ?? undefined,
-          isLoggedIn: true,
-        }
-      : null,
+    localStorage.getItem("app_token") ? { isLoggedIn: true } : null,
   );
 
-  const login = (token: string, userData: Pick<AuthUser, "email"> = {}) => {
+  const login = (token: string, userData: Record<string, unkstnown> = {}) => {
     localStorage.setItem("app_token", token);
-    if (userData.email) {
-      localStorage.setItem("app_email", userData.email);
-    }
     setUser({ ...userData, isLoggedIn: true });
   };
 
   const logout = () => {
     localStorage.removeItem("app_token");
-    localStorage.removeItem("app_email");
     setUser(null);
   };
 

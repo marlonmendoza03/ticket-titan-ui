@@ -21,7 +21,7 @@ export const AppHeader = () => {
 
     try {
       const session = await googleLogin(googleToken).unwrap();
-      login(session.token, { email: session.email });
+      login(session.token, session.email);
       setIsModalOpen(false);
     } catch (error) {
       console.error("Google login request failed:", error);
