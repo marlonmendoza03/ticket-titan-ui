@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     localStorage.getItem("app_token") ? { isLoggedIn: true } : null,
   );
 
-  const login = (token: string, userData: Record<string, unkstnown> = {}) => {
+  const login = (token: string, userData: Record<string, unknown> = {}) => {
     localStorage.setItem("app_token", token);
     setUser({ ...userData, isLoggedIn: true });
   };
