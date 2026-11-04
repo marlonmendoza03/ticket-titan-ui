@@ -2,6 +2,8 @@ import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { BrowserRouter } from "react-router";
 import { AppRoutes } from "./routes/AppRoutes";
 import "./App.css";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { AuthProvider } from "./hooks/AuthProvider";
 
 const theme = createTheme({
   palette: {
@@ -23,12 +25,16 @@ const theme = createTheme({
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   );
 }
 

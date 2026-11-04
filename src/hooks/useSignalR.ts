@@ -2,7 +2,7 @@ import { useDispatch } from "react-redux";
 import type { TicketNotificationDto, TicketResponseDto } from "../types/ticket";
 import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
-import { ticketsApi } from "../services/ticketsApi";
+import { ticketsApi } from "../api/ticketsApi";
 import type { AppDispatch } from "../middleware/store";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
