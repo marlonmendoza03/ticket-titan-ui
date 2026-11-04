@@ -1,17 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query";
 import type { CreateTicketDto, TicketResponseDto } from "../types/ticket";
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-if (!apiBaseUrl) {
-  throw new Error(
-    "VITE_API_BASE_URL is not defined in the environment variables.",
-  );
-}
+import { API_BASE_URL } from "../config/api";
 
 export const ticketsApi = createApi({
   reducerPath: "ticketsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: apiBaseUrl }),
+  baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
   tagTypes: ["Ticket"],
   endpoints: (builder) => ({
     getTickets: builder.query<TicketResponseDto[], void>({

@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { ticketsApi } from "../services/ticketsApi";
 import type { AppDispatch } from "../middleware/store";
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
+import { API_BASE_URL } from "../config/api";
 
 export const useSignalR = (
   onHighPriorityAlert?: (alert: TicketNotificationDto) => void,
@@ -17,15 +16,10 @@ export const useSignalR = (
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (!apiBaseUrl) {
-      console.error(
-        "VITE_API_BASE_URL is not defined in the environment variables.",
-      );
-      return;
-    }
-
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${apiBaseUrl}/hubs/tickets`)
+      .withUrl(`${API_BASE_URL}/hubs/tickets`, {
+        withCredentials: true,
+      })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build();
