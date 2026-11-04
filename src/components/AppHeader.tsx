@@ -4,27 +4,30 @@ import { Link } from "react-router";
 import { TicketTitanModal } from "./TicketTitanModal";
 import { useState } from "react";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import { useGetCsrfTokenMutation, useGoogleLoginMutation } from "../api/login";
+import {
+  useGetCsrfTokenMutation,
+  useGoogleLoginMutation,
+  useLogoutMutation,
+} from "../services/login";
 import { useAuth } from "../hooks/authContext";
 
 export const AppHeader = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [googleLogin] = useGoogleLoginMutation();
   const [getCsrfToken] = useGetCsrfTokenMutation();
-  const { isAuthenticated, logout, login } = useAuth();
+  const [logoutRequest, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
-    const googleToken = credentialResponse.credential;
-    if (!googleToken) {
+    const idToken = credentialResponse.credential;
+    if (!idToken) {
       console.error("Google sign-in succeeded without returning a credential.");
       return;
     }
 
     try {
-      const csrfResponse = await getCsrfToken().unwrap();
-      const { token } = await csrfResponse;
-      const session = await googleLogin({ googleToken, token }).unwrap();
-      login(session.token, { email: session.email });
+      const { token } = await getCsrfToken().unwrap();
+      await googleLogin({ idToken, token }).unwrap();
       setIsModalOpen(false);
     } catch (error) {
       console.error("Google login request failed:", error);
@@ -35,11 +38,17 @@ export const AppHeader = () => {
     console.error("Google sign-in failed.");
   };
 
-  const handleLoginLogoutButton = () => {
+  const handleLoginLogoutButton = async () => {
     if (!isAuthenticated) {
       setIsModalOpen(true);
-    } else {
-      logout();
+      return;
+    }
+
+    try {
+      const { token } = await getCsrfToken().unwrap();
+      await logoutRequest(token).unwrap();
+    } catch (error) {
+      console.error("Logout request failed:", error);
     }
   };
 
@@ -59,8 +68,15 @@ export const AppHeader = () => {
           color="primary"
           size="small"
           onClick={handleLoginLogoutButton}
+          disabled={isLoggingOut || isAuthLoading}
         >
-          {isAuthenticated ? "Logout" : "Login"}
+          {isAuthLoading
+            ? "Checking session…"
+            : isLoggingOut
+              ? "Logging out…"
+              : isAuthenticated
+                ? "Logout"
+                : "Login"}
         </Button>
         {!isAuthenticated && (
           <TicketTitanModal

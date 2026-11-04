@@ -12,33 +12,53 @@ if (!apiBaseUrl) {
 export const loginApi = createApi({
   reducerPath: "loginApi",
   baseQuery: fetchBaseQuery({ baseUrl: apiBaseUrl }),
+  tagTypes: ["Session"],
   endpoints: (builder) => ({
     googleLogin: builder.mutation<GoogleLoginReturnType, GoogleLoginArgs>({
-      query: ({
-        googleToken,
-        token,
-      }: {
-        googleToken: string;
-        token: string;
-      }) => ({
-        url: "/google-login",
+      query: ({ idToken, token }: { idToken: string; token: string }) => ({
+        url: "api/auth/google-login",
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-TOKEN": token,
         },
-        body: { token: googleToken },
+        body: { idToken },
       }),
+      invalidatesTags: ["Session"],
     }),
     getCsrfToken: builder.mutation<{ token: string }, void>({
       query: () => ({
-        url: "auth/csrf-token",
-        method: "POST",
+        url: "api/auth/csrf-token",
+        method: "GET",
         credentials: "include",
       }),
+    }),
+    getSession: builder.query<GoogleLoginReturnType, void>({
+      query: () => ({
+        url: "api/auth/session",
+        method: "GET",
+        credentials: "include",
+      }),
+      providesTags: ["Session"],
+    }),
+    logout: builder.mutation<void, string>({
+      query: (token: string) => ({
+        url: "api/auth/logout",
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRF-TOKEN": token,
+        },
+      }),
+      invalidatesTags: ["Session"],
     }),
   }),
 });
 
-export const { useGoogleLoginMutation, useGetCsrfTokenMutation } = loginApi;
+export const {
+  useGoogleLoginMutation,
+  useGetCsrfTokenMutation,
+  useGetSessionQuery,
+  useLogoutMutation,
+} = loginApi;

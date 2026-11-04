@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useGetSessionQuery } from "../services/login";
 import { AuthContext, type AuthUser } from "./authContext";
 
 type AuthProviderProps = {
@@ -6,28 +7,17 @@ type AuthProviderProps = {
 };
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<AuthUser | null>(() =>
-    localStorage.getItem("app_token") ? { isLoggedIn: true } : null,
-  );
-
-  const login = (token: string, userData: Record<string, unknown> = {}) => {
-    localStorage.setItem("app_token", token);
-    setUser({ ...userData, isLoggedIn: true });
-  };
-
-  const logout = () => {
-    localStorage.removeItem("app_token");
-    setUser(null);
-  };
+  const { data: session, isLoading } = useGetSessionQuery();
+  const user: AuthUser | null = session
+    ? { email: session.email, isLoggedIn: true }
+    : null;
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: user !== null,
-        isLoading: false,
-        login,
-        logout,
+        isLoading,
       }}
     >
       {children}

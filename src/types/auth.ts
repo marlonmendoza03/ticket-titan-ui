@@ -1,9 +1,8 @@
 export interface GoogleLoginReturnType {
-  token: string;
   email: string;
 }
 
 export interface GoogleLoginArgs {
-  googleToken: string;
+  idToken: string;
   token: string;
 }
