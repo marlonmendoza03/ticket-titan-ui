@@ -4,12 +4,13 @@ import { Link } from "react-router";
 import { TicketTitanModal } from "./TicketTitanModal";
 import { useState } from "react";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import { useGoogleLoginMutation } from "../api/login";
+import { useGetCsrfTokenMutation, useGoogleLoginMutation } from "../api/login";
 import { useAuth } from "../hooks/authContext";
 
 export const AppHeader = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [googleLogin] = useGoogleLoginMutation();
+  const [getCsrfToken] = useGetCsrfTokenMutation();
   const { isAuthenticated, logout, login } = useAuth();
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -20,7 +21,9 @@ export const AppHeader = () => {
     }
 
     try {
-      const session = await googleLogin(googleToken).unwrap();
+      const csrfResponse = await getCsrfToken().unwrap();
+      const { token } = await csrfResponse;
+      const session = await googleLogin({ googleToken, token }).unwrap();
       login(session.token, { email: session.email });
       setIsModalOpen(false);
     } catch (error) {
