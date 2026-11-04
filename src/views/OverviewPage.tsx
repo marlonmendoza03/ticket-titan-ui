@@ -2,7 +2,8 @@ import { Button, Paper } from "@mui/material";
 import { Plus } from "lucide-react";
 import { Link } from "react-router";
 import { PageHeading } from "../components/PageHeading";
-import { TicketTable, sampleTickets } from "../components/TicketTable";
+import { TicketTable } from "../components/TicketTable";
+import { sampleTickets } from "../data/ticketSamples";
 
 export const OverviewPage = () => (
   <>
