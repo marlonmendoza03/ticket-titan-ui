@@ -30,11 +30,12 @@ export const loginApi = createApi({
         credentials: "include",
       }),
     }),
-    getSession: builder.query<GoogleLoginReturnType, void>({
+    getSession: builder.query<GoogleLoginReturnType | null, void>({
       query: () => ({
         url: "api/auth/session",
         method: "GET",
         credentials: "include",
+        timeout: 5000,
       }),
       providesTags: ["Session"],
     }),
