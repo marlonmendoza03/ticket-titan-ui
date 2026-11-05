@@ -4,7 +4,10 @@ import { API_BASE_URL } from "../config/api";
 
 export const ticketsApi = createApi({
   reducerPath: "ticketsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_BASE_URL,
+    timeout: 30000,
+  }),
   tagTypes: ["Ticket"],
   endpoints: (builder) => ({
     getTickets: builder.query<TicketResponseDto[], void>({

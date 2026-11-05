@@ -4,7 +4,10 @@ import { API_BASE_URL } from "../config/api";
 
 export const loginApi = createApi({
   reducerPath: "loginApi",
-  baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_BASE_URL,
+    timeout: 30000,
+  }),
   tagTypes: ["Session"],
   endpoints: (builder) => ({
     googleLogin: builder.mutation<GoogleLoginReturnType, GoogleLoginArgs>({
