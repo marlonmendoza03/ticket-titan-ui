@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query";
 import type { CreateTicketDto, TicketResponseDto } from "../types/ticket";
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL } from "./api";
 
 export const ticketsApi = createApi({
   reducerPath: "ticketsApi",

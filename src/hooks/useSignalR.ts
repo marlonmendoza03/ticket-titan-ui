@@ -2,9 +2,9 @@ import { useDispatch } from "react-redux";
 import type { TicketNotificationDto, TicketResponseDto } from "../types/ticket";
 import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
-import { ticketsApi } from "../services/ticketsApi";
+import { ticketsApi } from "../api/ticketsApi";
 import type { AppDispatch } from "../middleware/store";
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL } from "../api/api";
 
 export const useSignalR = (
   onHighPriorityAlert?: (alert: TicketNotificationDto) => void,

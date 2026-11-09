@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { GoogleLoginArgs, GoogleLoginReturnType } from "../types/auth";
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL } from "./api";
 
 export const loginApi = createApi({
   reducerPath: "loginApi",

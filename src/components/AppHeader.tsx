@@ -1,57 +1,8 @@
-import { Button } from "@mui/material";
 import { TicketCheck } from "lucide-react";
 import { Link } from "react-router";
-import { TicketTitanModal } from "./TicketTitanModal";
-import { useState } from "react";
-import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import {
-  useGetCsrfTokenMutation,
-  useGoogleLoginMutation,
-  useLogoutMutation,
-} from "../services/login";
-import { useAuth } from "../hooks/authContext";
+import { LoginLogout } from "../views/LoginLogout";
 
 export const AppHeader = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [googleLogin] = useGoogleLoginMutation();
-  const [getCsrfToken] = useGetCsrfTokenMutation();
-  const [logoutRequest, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-
-  const handleSuccess = async (credentialResponse: CredentialResponse) => {
-    const idToken = credentialResponse.credential;
-    if (!idToken) {
-      console.error("Google sign-in succeeded without returning a credential.");
-      return;
-    }
-
-    try {
-      const { token } = await getCsrfToken().unwrap();
-      await googleLogin({ idToken, token }).unwrap();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Google login request failed:", error);
-    }
-  };
-
-  const handleError = () => {
-    console.error("Google sign-in failed.");
-  };
-
-  const handleLoginLogoutButton = async () => {
-    if (!isAuthenticated) {
-      setIsModalOpen(true);
-      return;
-    }
-
-    try {
-      const { token } = await getCsrfToken().unwrap();
-      await logoutRequest(token).unwrap();
-    } catch (error) {
-      console.error("Logout request failed:", error);
-    }
-  };
-
   return (
     <header className="app-header">
       <Link className="brand" to="/" aria-label="Ticket Titan home">
@@ -62,32 +13,7 @@ export const AppHeader = () => {
       </Link>
       <div className="header-actions">
         <span className="workspace-label">Support workspace</span>
-
-        <Button
-          variant="outlined"
-          color="primary"
-          size="small"
-          onClick={handleLoginLogoutButton}
-          disabled={isLoggingOut || isAuthLoading}
-        >
-          {isAuthLoading
-            ? "Checking session…"
-            : isLoggingOut
-              ? "Logging out…"
-              : isAuthenticated
-                ? "Logout"
-                : "Login"}
-        </Button>
-        {!isAuthenticated && (
-          <TicketTitanModal
-            open={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            title="Login"
-            cancelButtonText="Cancel"
-          >
-            <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
-          </TicketTitanModal>
-        )}
+        <LoginLogout />
       </div>
     </header>
   );

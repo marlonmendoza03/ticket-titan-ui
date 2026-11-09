@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useGetSessionQuery } from "../services/login";
+import { useGetSessionQuery } from "../api/login";
 import { AuthContext, type AuthUser } from "./authContext";
 
 type AuthProviderProps = {

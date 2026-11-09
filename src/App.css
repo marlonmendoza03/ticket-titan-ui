@@ -137,10 +137,20 @@
 }
 
 .page-content {
+  position: relative;
   width: min(100%, 1440px);
   flex: 1;
   align-self: center;
   padding: 44px clamp(24px, 4vw, 58px) 48px;
+}
+
+.page-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background: rgb(255 255 255 / 82%);
 }
 
 .page-heading {
