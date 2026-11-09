@@ -10,13 +10,11 @@ export const useSignalR = (
   onHighPriorityAlert?: (alert: TicketNotificationDto) => void,
 ) => {
   const dispatch = useDispatch<AppDispatch>();
-  const [connection, setConnection] = useState<signalR.HubConnection | null>(
-    null,
-  );
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const newConnection = new signalR.HubConnectionBuilder()
+    let isActive = true;
+    const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${API_BASE_URL}/hubs/tickets`, {
         withCredentials: true,
       })
@@ -24,44 +22,40 @@ export const useSignalR = (
       .configureLogging(signalR.LogLevel.Information)
       .build();
 
-    setConnection(newConnection);
-  }, []);
+    connection.on("TicketCreated", (newTicket: TicketResponseDto) => {
+      dispatch(
+        ticketsApi.util.updateQueryData("getTickets", undefined, (draft) => {
+          draft.unshift(newTicket);
+        }),
+      );
+    });
 
-  useEffect(() => {
-    if (!connection) return;
+    connection.on(
+      "ReceiveHighPriorityNotification",
+      (alert: TicketNotificationDto) => {
+        if (onHighPriorityAlert) {
+          onHighPriorityAlert(alert);
+        }
+      },
+    );
 
-    connection
+    void connection
       .start()
       .then(() => {
+        if (!isActive) return;
         setIsConnected(true);
-
-        connection.on("TicketCreated", (newTicket: TicketResponseDto) => {
-          dispatch(
-            ticketsApi.util.updateQueryData(
-              "getTickets",
-              undefined,
-              (draft) => {
-                draft.unshift(newTicket);
-              },
-            ),
-          );
-        });
-
-        connection.on(
-          "ReceiveHighPriorityNotification",
-          (alert: TicketNotificationDto) => {
-            if (onHighPriorityAlert) {
-              onHighPriorityAlert(alert);
-            }
-          },
-        );
       })
-      .catch((error) => console.error("SignalR Connection Error: ", error));
+      .catch((error: unknown) => {
+        if (isActive) {
+          console.error("SignalR Connection Error: ", error);
+        }
+      });
 
     return () => {
-      connection.stop();
+      isActive = false;
+      void connection.stop();
     };
-  }, [connection, dispatch, onHighPriorityAlert]);
+  }, [dispatch, onHighPriorityAlert]);
 
   return { isConnected };
 };

@@ -7,7 +7,7 @@ import { TicketTable } from "../components/TicketTable";
 export const TicketsPage = () => (
   <>
     <PageHeading
-      title="All tickets"
+      title="All Content Tickets"
       description="Browse recent requests and see where each one stands."
       action={
         <Button
@@ -16,7 +16,7 @@ export const TicketsPage = () => (
           variant="contained"
           startIcon={<Plus size={17} />}
         >
-          Create ticket
+          Create Content Ticket
         </Button>
       }
     />

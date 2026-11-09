@@ -8,7 +8,7 @@ import { sampleTickets } from "../data/ticketSamples";
 export const OverviewPage = () => (
   <>
     <PageHeading
-      title="Your support desk, at a glance."
+      title="Your content tickets, at a glance."
       description="Keep an eye on incoming requests and pick up where your team left off."
       action={
         <Button
@@ -17,7 +17,7 @@ export const OverviewPage = () => (
           variant="contained"
           startIcon={<Plus size={17} />}
         >
-          Create ticket
+          Create Story Ticket
         </Button>
       }
     />
@@ -50,7 +50,7 @@ export const OverviewPage = () => (
       <div className="section-heading">
         <div>
           <h2 id="recent-tickets-title">Recent tickets</h2>
-          <p>Latest activity from your support queue</p>
+          <p>Latest activity from your content queue</p>
         </div>
         <Link className="text-link" to="/tickets">
           View all tickets

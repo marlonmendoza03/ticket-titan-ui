@@ -12,7 +12,7 @@ export const AppHeader = () => {
         <span>Ticket Titan</span>
       </Link>
       <div className="header-actions">
-        <span className="workspace-label">Support workspace</span>
+        <span className="workspace-label">Faceless Content Builder</span>
         <LoginLogout />
       </div>
     </header>

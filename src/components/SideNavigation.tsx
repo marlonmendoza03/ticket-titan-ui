@@ -24,9 +24,5 @@ export const SideNavigation = () => (
         <span>{label}</span>
       </NavLink>
     ))}
-    <div className="navigation-note">
-      <span className="availability-dot" aria-hidden="true" />
-      <span>Workspace ready</span>
-    </div>
   </nav>
 );
