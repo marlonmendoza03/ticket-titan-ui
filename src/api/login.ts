@@ -56,6 +56,7 @@ export const loginApi = createApi({
 export const {
   useGoogleLoginMutation,
   useGetCsrfTokenQuery,
+  useLazyGetCsrfTokenQuery,
   useGetSessionQuery,
   useLogoutMutation,
 } = loginApi;

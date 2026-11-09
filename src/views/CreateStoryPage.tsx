@@ -14,20 +14,40 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { useGetCsrfTokenQuery } from "../api/login";
 import {
   useGetCategoriesQuery,
   useSendStoryMessageMutation,
 } from "../api/storyApi";
 import { PageHeading } from "../components/PageHeading";
 import { createMessageId } from "../data/storyMocks";
-import type { ChatMessage, StorySetup } from "../types/story";
 import { useAuth } from "../hooks/authContext";
+import type { ChatMessage, StorySetup } from "../types/story";
 
 const CUSTOM = "custom";
 const EPISODE_OPTIONS = [1, 3, 5, 10];
 const DURATION_OPTIONS = [60, 120, 180, 240];
 const EPISODE_LIMITS = { min: 1, max: 20 };
 const DURATION_LIMITS = { min: 30, max: 600 };
+
+const isAntiforgeryTokenError = (error: unknown) => {
+  if (typeof error !== "object" || error === null || !("data" in error)) {
+    return false;
+  }
+
+  const { data } = error;
+  const message =
+    typeof data === "string"
+      ? data
+      : typeof data === "object" &&
+          data !== null &&
+          "message" in data &&
+          typeof data.message === "string"
+        ? data.message
+        : "";
+
+  return /valid anti[- ]forgery token is required/i.test(message);
+};
 
 const formatDuration = (seconds: number) =>
   seconds % 60 === 0 ? `${seconds / 60} min` : `${seconds} sec`;
@@ -52,10 +72,14 @@ export const CreateStoryPage = () => {
     isError: isCategoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
-  const [sendStoryMessage, { isLoading: isReplying }] =
+  const {
+    isFetching: isFetchingCsrfToken,
+    refetch: refreshCsrfToken,
+  } = useGetCsrfTokenQuery();
+  const [sendStoryMessage, { isLoading: isSendingMessage }] =
     useSendStoryMessageMutation();
   const { user } = useAuth();
-  const token = user?.csrfToken || "";
+  const isReplying = isFetchingCsrfToken || isSendingMessage;
   const [categoryId, setCategoryId] = useState("");
   const [episodeChoice, setEpisodeChoice] = useState("");
   const [customEpisodes, setCustomEpisodes] = useState("");
@@ -105,15 +129,39 @@ export const CreateStoryPage = () => {
     };
     const history = [...messages, userMessage];
 
-    setMessages(history);
-    setDraft("");
     setChatError(null);
 
     try {
-      const response = await sendStoryMessage({
+      const token = user?.csrfToken?.trim();
+      if (!token) {
+        throw new Error("No CSRF token is available in the auth context.");
+      }
+
+      setMessages(history);
+      setDraft("");
+
+      const request = {
         storyChatRequest: { setup, messages: history },
-        token,
-      }).unwrap();
+      };
+
+      let response;
+      try {
+        response = await sendStoryMessage({ ...request, token }).unwrap();
+      } catch (error) {
+        if (!isAntiforgeryTokenError(error)) throw error;
+
+        const { token: refreshedToken } = await refreshCsrfToken().unwrap();
+        if (!refreshedToken?.trim()) {
+          throw new Error("The CSRF token endpoint returned an empty token.", {
+            cause: error,
+          });
+        }
+        response = await sendStoryMessage({
+          ...request,
+          token: refreshedToken.trim(),
+        }).unwrap();
+      }
+
       const assistantMessage: ChatMessage = {
         id: createMessageId(),
         role: response.role === "user" ? "user" : "assistant",
@@ -123,7 +171,11 @@ export const CreateStoryPage = () => {
       setMessages((current) => [...current, assistantMessage]);
     } catch (error) {
       console.error("Story chat request failed:", error);
-      setChatError("Gemini didn't reply. Send your message again to retry.");
+      setChatError(
+        isAntiforgeryTokenError(error)
+          ? "Couldn't verify your request. Please try again."
+          : "Gemini didn't reply. Send your message again to retry.",
+      );
     }
   };
 
