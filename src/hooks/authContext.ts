@@ -3,6 +3,7 @@ import { createContext, useContext } from "react";
 export type AuthUser = Record<string, unknown> & {
   email: string;
   isLoggedIn: true;
+  csrfToken?: string;
 };
 
 export type AuthContextValue = {

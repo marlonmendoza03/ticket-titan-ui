@@ -23,7 +23,7 @@ export const loginApi = createApi({
       }),
       invalidatesTags: ["Session"],
     }),
-    getCsrfToken: builder.mutation<{ token: string }, void>({
+    getCsrfToken: builder.query<{ token: string }, void>({
       query: () => ({
         url: "api/auth/csrf-token",
         method: "GET",
@@ -55,7 +55,7 @@ export const loginApi = createApi({
 
 export const {
   useGoogleLoginMutation,
-  useGetCsrfTokenMutation,
+  useGetCsrfTokenQuery,
   useGetSessionQuery,
   useLogoutMutation,
 } = loginApi;

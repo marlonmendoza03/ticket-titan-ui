@@ -21,6 +21,7 @@ import {
 import { PageHeading } from "../components/PageHeading";
 import { createMessageId } from "../data/storyMocks";
 import type { ChatMessage, StorySetup } from "../types/story";
+import { useAuth } from "../hooks/authContext";
 
 const CUSTOM = "custom";
 const EPISODE_OPTIONS = [1, 3, 5, 10];
@@ -53,7 +54,8 @@ export const CreateStoryPage = () => {
   } = useGetCategoriesQuery();
   const [sendStoryMessage, { isLoading: isReplying }] =
     useSendStoryMessageMutation();
-
+  const { user } = useAuth();
+  const token = user?.csrfToken || "";
   const [categoryId, setCategoryId] = useState("");
   const [episodeChoice, setEpisodeChoice] = useState("");
   const [customEpisodes, setCustomEpisodes] = useState("");
@@ -108,11 +110,17 @@ export const CreateStoryPage = () => {
     setChatError(null);
 
     try {
-      const { message } = await sendStoryMessage({
-        setup,
-        messages: history,
+      const response = await sendStoryMessage({
+        storyChatRequest: { setup, messages: history },
+        token,
       }).unwrap();
-      setMessages((current) => [...current, message]);
+      const assistantMessage: ChatMessage = {
+        id: createMessageId(),
+        role: response.role === "user" ? "user" : "assistant",
+        content: response.content,
+        createdAt: response.createdAt,
+      };
+      setMessages((current) => [...current, assistantMessage]);
     } catch (error) {
       console.error("Story chat request failed:", error);
       setChatError("Gemini didn't reply. Send your message again to retry.");

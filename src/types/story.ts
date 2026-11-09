@@ -26,5 +26,7 @@ export interface StoryChatRequest {
 }
 
 export interface StoryChatResponse {
-  message: ChatMessage;
+  content: string;
+  role: string | null;
+  createdAt: string;
 }

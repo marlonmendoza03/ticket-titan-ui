@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { buildMockReply, mockCategories, wait } from "../data/storyMocks";
+import { mockCategories, wait } from "../data/storyMocks";
 import type {
   CategoryDto,
   StoryChatRequest,
@@ -25,12 +25,27 @@ export const storyApi = createApi({
       },
       providesTags: ["Category"],
     }),
-
-    sendStoryMessage: builder.mutation<StoryChatResponse, StoryChatRequest>({
-      queryFn: async (request) => {
-        await wait(1200);
-        return { data: { message: buildMockReply(request) } };
-      },
+    sendStoryMessage: builder.mutation<
+      StoryChatResponse,
+      { storyChatRequest: StoryChatRequest; token: string }
+    >({
+      query: ({
+        storyChatRequest: { messages: messages, setup: setup },
+        token,
+      }: {
+        storyChatRequest: StoryChatRequest;
+        token: string;
+      }) => ({
+        url: "api/chat",
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": token,
+        },
+        body: { messages, setup },
+      }),
+      invalidatesTags: ["Category"],
     }),
   }),
 });

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useGetSessionQuery } from "../api/login";
+import { useGetCsrfTokenQuery, useGetSessionQuery } from "../api/login";
 import { AuthContext, type AuthUser } from "./authContext";
 
 type AuthProviderProps = {
@@ -7,11 +7,15 @@ type AuthProviderProps = {
 };
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const { data: session, isLoading } = useGetSessionQuery();
+  const { data: session, isLoading: isGetSessionLoading } =
+    useGetSessionQuery();
+  const { data: token, isLoading: isTokenLoading } = useGetCsrfTokenQuery();
+
   const user: AuthUser | null = session
-    ? { email: session.email, isLoggedIn: true }
+    ? { email: session.email, isLoggedIn: true, csrfToken: token?.token }
     : null;
 
+  const isLoading = isTokenLoading || isGetSessionLoading;
   return (
     <AuthContext.Provider
       value={{

@@ -1,11 +1,7 @@
 import { Button } from "@mui/material";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { TicketTitanModal } from "../components/TicketTitanModal";
-import {
-  useGetCsrfTokenMutation,
-  useGoogleLoginMutation,
-  useLogoutMutation,
-} from "../api/login";
+import { useGoogleLoginMutation, useLogoutMutation } from "../api/login";
 import { useState } from "react";
 import { useAuth } from "../hooks/authContext";
 
@@ -13,14 +9,12 @@ export const LoginLogout = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [googleLogin, { isLoading: isGoogleLoginLoading }] =
     useGoogleLoginMutation();
-  const [getCsrfToken, { isLoading: isGetCsrfTokenLoading }] =
-    useGetCsrfTokenMutation();
   const [logoutRequest, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const isLoginRequestLoading =
-    isGoogleLoginLoading || isGetCsrfTokenLoading;
-  const isLoading =
-    isAuthLoading || isLoginRequestLoading || isLoggingOut;
+  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
+  const isLoginRequestLoading = isGoogleLoginLoading;
+  const isLoading = isAuthLoading || isLoginRequestLoading || isLoggingOut;
+
+  const token = user?.csrfToken || "";
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     const idToken = credentialResponse.credential;
@@ -30,7 +24,6 @@ export const LoginLogout = () => {
     }
 
     try {
-      const { token } = await getCsrfToken().unwrap();
       await googleLogin({ idToken, token }).unwrap();
       setIsModalOpen(false);
     } catch (error) {
@@ -49,7 +42,6 @@ export const LoginLogout = () => {
     }
 
     try {
-      const { token } = await getCsrfToken().unwrap();
       await logoutRequest(token).unwrap();
     } catch (error) {
       console.error("Logout request failed:", error);
@@ -71,7 +63,7 @@ export const LoginLogout = () => {
             ? "Logging out…"
             : isGoogleLoginLoading
               ? "Signing in…"
-              : isGetCsrfTokenLoading
+              : isLoading
                 ? "Loading…"
                 : isAuthenticated
                   ? "Logout"
