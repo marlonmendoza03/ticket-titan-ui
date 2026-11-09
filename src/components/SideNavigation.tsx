@@ -5,7 +5,7 @@ import { ROUTES } from "../routes/paths";
 const navigationItems = [
   { label: "Overview", to: ROUTES.Home, icon: LayoutDashboard, end: true },
   { label: "All tickets", to: ROUTES.Tickets, icon: ClipboardList, end: false },
-  { label: "New ticket", to: ROUTES.CreateTicket, icon: Plus, end: true },
+  { label: "New story", to: ROUTES.CreateStory, icon: Plus, end: true },
 ];
 
 export const SideNavigation = () => (

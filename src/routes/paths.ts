@@ -2,7 +2,7 @@ export const ROUTES = {
   Home: "/",
   Tickets: "/tickets",
   TicketDetails: (id: number | string) => `/tickets/${id}`,
-  CreateTicket: "/tickets/create",
+  CreateStory: "/stories/create",
 } as const;
 
 export type RouteKeys = keyof typeof ROUTES;
