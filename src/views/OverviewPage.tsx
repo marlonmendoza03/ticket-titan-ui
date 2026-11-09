@@ -1,6 +1,7 @@
 import { Button, Paper } from "@mui/material";
 import { Plus } from "lucide-react";
 import { Link } from "react-router";
+import { ROUTES } from "../routes/paths";
 import { PageHeading } from "../components/PageHeading";
 import { TicketTable } from "../components/TicketTable";
 import { sampleTickets } from "../data/ticketSamples";
@@ -13,11 +14,11 @@ export const OverviewPage = () => (
       action={
         <Button
           component={Link}
-          to="/tickets/create"
+          to={ROUTES.CreateStory}
           variant="contained"
           startIcon={<Plus size={17} />}
         >
-          Create Story Ticket
+          Create story
         </Button>
       }
     />
