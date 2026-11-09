@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 import { AppShell } from "../components/AppShell";
 import { CreateStoryPage } from "../views/CreateStoryPage";
 import { OverviewPage } from "../views/OverviewPage";
@@ -12,6 +12,10 @@ export const AppRoutes = () => (
       <Route path={ROUTES.Home} element={<OverviewPage />} />
       <Route path={ROUTES.Tickets} element={<TicketsPage />} />
       <Route path={ROUTES.CreateStory} element={<CreateStoryPage />} />
+      <Route
+        path="/tickets/create"
+        element={<Navigate to={ROUTES.CreateStory} replace />}
+      />
       <Route
         path={ROUTES.TicketDetails(":id")}
         element={<TicketDetailsPage />}
