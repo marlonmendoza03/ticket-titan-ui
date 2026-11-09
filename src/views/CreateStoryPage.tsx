@@ -14,6 +14,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { useGetCsrfTokenMutation } from "../api/login";
 import {
   useGetCategoriesQuery,
   useSendStoryMessageMutation,
@@ -51,8 +52,11 @@ export const CreateStoryPage = () => {
     isError: isCategoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
-  const [sendStoryMessage, { isLoading: isReplying }] =
+  const [getCsrfToken, { isLoading: isGettingToken }] =
+    useGetCsrfTokenMutation();
+  const [sendStoryMessage, { isLoading: isSending }] =
     useSendStoryMessageMutation();
+  const isReplying = isGettingToken || isSending;
 
   const [categoryId, setCategoryId] = useState("");
   const [episodeChoice, setEpisodeChoice] = useState("");
@@ -81,7 +85,12 @@ export const CreateStoryPage = () => {
   const isDurationUnlocked = isEpisodesUnlocked && episodeCount !== null;
   const setup: StorySetup | null =
     category && episodeCount !== null && episodeDurationSec !== null
-      ? { categoryId: category.id, episodeCount, episodeDurationSec }
+      ? {
+          categoryId: category.id,
+          categoryName: category.name,
+          episodeCount,
+          episodeDurationSec,
+        }
       : null;
   const isSetupLocked = messages.length > 0;
   const canSend = setup !== null && draft.trim() !== "" && !isReplying;
@@ -108,9 +117,10 @@ export const CreateStoryPage = () => {
     setChatError(null);
 
     try {
+      const { token } = await getCsrfToken().unwrap();
       const { message } = await sendStoryMessage({
-        setup,
-        messages: history,
+        request: { setup, messages: history },
+        token,
       }).unwrap();
       setMessages((current) => [...current, message]);
     } catch (error) {

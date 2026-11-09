@@ -16,6 +16,7 @@ export interface ChatMessage {
 
 export interface StorySetup {
   categoryId: number;
+  categoryName: string;
   episodeCount: number;
   episodeDurationSec: number;
 }
@@ -27,4 +28,9 @@ export interface StoryChatRequest {
 
 export interface StoryChatResponse {
   message: ChatMessage;
+}
+
+export interface SendStoryMessageArgs {
+  request: StoryChatRequest;
+  token: string;
 }

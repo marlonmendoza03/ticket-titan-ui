@@ -1,15 +1,14 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { buildMockReply, mockCategories, wait } from "../data/storyMocks";
+import { mockCategories, wait } from "../data/storyMocks";
 import type {
   CategoryDto,
-  StoryChatRequest,
+  SendStoryMessageArgs,
   StoryChatResponse,
 } from "../types/story";
 import { API_BASE_URL } from "./api";
 
-// Endpoints use mocked `queryFn`s until the backend exposes
-// GET api/categories and the Gemini chat endpoint. Swap each `queryFn`
-// for a `query` (like ticketsApi) once those exist.
+// getCategories stays mocked until the backend exposes GET api/categories.
+// Swap its `queryFn` for a `query` (like sendStoryMessage) once it exists.
 export const storyApi = createApi({
   reducerPath: "storyApi",
   baseQuery: fetchBaseQuery({
@@ -26,12 +25,20 @@ export const storyApi = createApi({
       providesTags: ["Category"],
     }),
 
-    sendStoryMessage: builder.mutation<StoryChatResponse, StoryChatRequest>({
-      queryFn: async (request) => {
-        await wait(1200);
-        return { data: { message: buildMockReply(request) } };
+    sendStoryMessage: builder.mutation<StoryChatResponse, SendStoryMessageArgs>(
+      {
+        query: ({ request, token }) => ({
+          url: "api/story/chat",
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": token,
+          },
+          body: request,
+        }),
       },
-    }),
+    ),
   }),
 });
 
