@@ -36,7 +36,7 @@ export const storyApi = createApi({
         storyChatRequest: StoryChatRequest;
         token: string;
       }) => ({
-        url: "api/chat",
+        url: "api/geminichat/chat",
         method: "POST",
         credentials: "include",
         headers: {
