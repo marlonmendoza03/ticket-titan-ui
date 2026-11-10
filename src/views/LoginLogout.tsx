@@ -1,46 +1,19 @@
 import { Button } from "@mui/material";
-import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import { TicketTitanModal } from "../components/TicketTitanModal";
-import { useGoogleLoginMutation, useLogoutMutation } from "../api/login";
-import { useState } from "react";
+import { Link } from "react-router";
+import { useLogoutMutation } from "../api/login";
 import { useAuth } from "../hooks/authContext";
+import { ROUTES } from "../routes/paths";
 
 export const LoginLogout = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [googleLogin, { isLoading: isGoogleLoginLoading }] =
-    useGoogleLoginMutation();
   const [logoutRequest, { isLoading: isLoggingOut }] = useLogoutMutation();
   const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
-  const isLoginRequestLoading = isGoogleLoginLoading;
-  const isLoading = isAuthLoading || isLoginRequestLoading || isLoggingOut;
 
-  const token = user?.csrfToken || "";
-
-  const handleSuccess = async (credentialResponse: CredentialResponse) => {
-    const idToken = credentialResponse.credential;
-    if (!idToken) {
-      console.error("Google sign-in succeeded without returning a credential.");
+  const handleLogout = async () => {
+    const token = user?.csrfToken?.trim();
+    if (!token) {
+      console.error("Logout request skipped because no CSRF token is available.");
       return;
     }
-
-    try {
-      await googleLogin({ idToken, token }).unwrap();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Google login request failed:", error);
-    }
-  };
-
-  const handleError = () => {
-    console.error("Google sign-in failed.");
-  };
-
-  const handleLoginLogoutButton = async () => {
-    if (!isAuthenticated) {
-      setIsModalOpen(true);
-      return;
-    }
-
     try {
       await logoutRequest(token).unwrap();
     } catch (error) {
@@ -50,34 +23,28 @@ export const LoginLogout = () => {
 
   return (
     <>
-      <Button
-        variant="outlined"
-        color="primary"
-        size="small"
-        onClick={handleLoginLogoutButton}
-        disabled={isLoading}
-      >
-        {isAuthLoading
-          ? "Checking session…"
-          : isLoggingOut
-            ? "Logging out…"
-            : isGoogleLoginLoading
-              ? "Signing in…"
-              : isLoading
-                ? "Loading…"
-                : isAuthenticated
-                  ? "Logout"
-                  : "Login"}
-      </Button>
       {!isAuthenticated && (
-        <TicketTitanModal
-          open={isModalOpen && !isLoading}
-          onClose={() => setIsModalOpen(false)}
-          title="Login"
-          cancelButtonText="Cancel"
+        <Button
+          component={Link}
+          to={ROUTES.Login}
+          variant="outlined"
+          color="primary"
+          size="small"
+          disabled={isAuthLoading}
         >
-          <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
-        </TicketTitanModal>
+          Sign in
+        </Button>
+      )}
+      {isAuthenticated && (
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={handleLogout}
+          disabled={isAuthLoading || isLoggingOut || !user?.csrfToken}
+        >
+          {isLoggingOut ? "Logging out…" : "Logout"}
+        </Button>
       )}
     </>
   );
