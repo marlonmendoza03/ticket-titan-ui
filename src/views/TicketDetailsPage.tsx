@@ -7,7 +7,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { ArrowLeft, Box, SendHorizontal, Sparkles } from "lucide-react";
+import { ArrowLeft, SendHorizontal, Sparkles } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { PageHeading } from "../components/PageHeading";
 import { useGetCsrfTokenQuery } from "../api/login";
