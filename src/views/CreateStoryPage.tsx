@@ -1,12 +1,12 @@
 import {
-  Button,
+  Box,
   CircularProgress,
   IconButton,
   MenuItem,
   Paper,
   TextField,
 } from "@mui/material";
-import { Lock, RotateCcw, SendHorizontal, Sparkles } from "lucide-react";
+import { SendHorizontal, Sparkles } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -15,14 +15,16 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useGetCsrfTokenQuery } from "../api/login";
-import {
-  useGetCategoriesQuery,
-  useSendStoryMessageMutation,
-} from "../api/storyApi";
+import { useSendInitialMessageMutation } from "../api/storyApi";
 import { PageHeading } from "../components/PageHeading";
-import { createMessageId } from "../data/storyMocks";
 import { useAuth } from "../hooks/authContext";
-import type { ChatMessage, StorySetup } from "../types/story";
+import type {
+  CategoryDto,
+  StoryChatMessageDto,
+  StorySetup,
+} from "../types/story";
+import { TicketTitanModal } from "../components/TicketTitanModal";
+import { useNavigate } from "react-router";
 
 const CUSTOM = "custom";
 const EPISODE_OPTIONS = [1, 3, 5, 10];
@@ -49,6 +51,34 @@ const isAntiforgeryTokenError = (error: unknown) => {
   return /valid anti[- ]forgery token is required/i.test(message);
 };
 
+const mockCategories: CategoryDto[] = [
+  {
+    name: "Horror",
+    description: "Slow-burn dread, unexplained events, twist endings.",
+    isActive: true,
+  },
+  {
+    name: "True crime",
+    description: "Narrated case breakdowns told through evidence.",
+    isActive: true,
+  },
+  {
+    name: "History",
+    description: "Little-known moments from the past, told as stories.",
+    isActive: true,
+  },
+  {
+    name: "Motivation",
+    description: "Short, punchy lessons with a clear takeaway.",
+    isActive: true,
+  },
+  {
+    name: "Fantasy",
+    description: "Original worlds, quests, and mythical creatures.",
+    isActive: true,
+  },
+];
+
 const formatDuration = (seconds: number) =>
   seconds % 60 === 0 ? `${seconds / 60} min` : `${seconds} sec`;
 
@@ -66,28 +96,23 @@ const parseChoice = (
 };
 
 export const CreateStoryPage = () => {
-  const {
-    data: categories = [],
-    isLoading: isCategoriesLoading,
-    isError: isCategoriesError,
-    refetch: refetchCategories,
-  } = useGetCategoriesQuery();
-  const {
-    isFetching: isFetchingCsrfToken,
-    refetch: refreshCsrfToken,
-  } = useGetCsrfTokenQuery();
-  const [sendStoryMessage, { isLoading: isSendingMessage }] =
-    useSendStoryMessageMutation();
+  const { isFetching: isFetchingCsrfToken, refetch: refreshCsrfToken } =
+    useGetCsrfTokenQuery();
+  const [sendInitialMessage, { isLoading: isSendingMessage }] =
+    useSendInitialMessageMutation();
   const { user } = useAuth();
   const isReplying = isFetchingCsrfToken || isSendingMessage;
-  const [categoryId, setCategoryId] = useState("");
+  const [category, setCategory] = useState("");
   const [episodeChoice, setEpisodeChoice] = useState("");
   const [customEpisodes, setCustomEpisodes] = useState("");
   const [durationChoice, setDurationChoice] = useState("");
   const [customDuration, setCustomDuration] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [draft, setDraft] = useState("");
   const [chatError, setChatError] = useState<string | null>(null);
+  const [isRedirectModalOpen, setIsRedirectModalOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const [secondsLeft, setIsSecondsLeft] = useState(5);
+  const navigate = useNavigate();
 
   const messageListRef = useRef<HTMLDivElement>(null);
 
@@ -96,38 +121,45 @@ export const CreateStoryPage = () => {
     customEpisodes,
     EPISODE_LIMITS,
   );
-  const episodeDurationSec = parseChoice(
+  const episodeDurationInSec = parseChoice(
     durationChoice,
     customDuration,
     DURATION_LIMITS,
   );
-  const category = categories.find((c) => String(c.id) === categoryId);
+
+  const handleRedirect = () => {
+    navigate(`/tickets/${sessionId}`);
+  };
+
+  useEffect(() => {
+    if (!isRedirectModalOpen) return;
+
+    const timerId = setInterval(() => {
+      setIsSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerId);
+          setIsRedirectModalOpen(false);
+          handleRedirect();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [isRedirectModalOpen]);
 
   const isEpisodesUnlocked = Boolean(category);
   const isDurationUnlocked = isEpisodesUnlocked && episodeCount !== null;
   const setup: StorySetup | null =
-    category && episodeCount !== null && episodeDurationSec !== null
-      ? { categoryId: category.id, episodeCount, episodeDurationSec }
+    category && episodeCount !== null && episodeDurationInSec !== null
+      ? { category: category, episodeCount, episodeDurationInSec }
       : null;
-  const isSetupLocked = messages.length > 0;
-  const canSend = setup !== null && draft.trim() !== "" && !isReplying;
-
-  useEffect(() => {
-    const list = messageListRef.current;
-    if (list) list.scrollTop = list.scrollHeight;
-  }, [messages, isReplying]);
+  const canSend = setup !== null && !isReplying;
 
   const handleSend = async (event?: FormEvent) => {
     event?.preventDefault();
     if (!setup || !canSend) return;
-
-    const userMessage: ChatMessage = {
-      id: createMessageId(),
-      role: "user",
-      content: draft.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    const history = [...messages, userMessage];
 
     setChatError(null);
 
@@ -137,16 +169,18 @@ export const CreateStoryPage = () => {
         throw new Error("No CSRF token is available in the auth context.");
       }
 
-      setMessages(history);
-      setDraft("");
-
-      const request = {
-        storyChatRequest: { setup, messages: history },
+      const request: StoryChatMessageDto = {
+        role: "User",
+        storySetup: setup,
+        content: draft,
       };
 
-      let response;
       try {
-        response = await sendStoryMessage({ ...request, token }).unwrap();
+        const response = await sendInitialMessage({ request, token }).unwrap();
+        if (response.id) {
+          setSessionId(`/${response.id}`);
+          setIsRedirectModalOpen(true);
+        }
       } catch (error) {
         if (!isAntiforgeryTokenError(error)) throw error;
 
@@ -156,19 +190,7 @@ export const CreateStoryPage = () => {
             cause: error,
           });
         }
-        response = await sendStoryMessage({
-          ...request,
-          token: refreshedToken.trim(),
-        }).unwrap();
       }
-
-      const assistantMessage: ChatMessage = {
-        id: createMessageId(),
-        role: response.role === "user" ? "user" : "assistant",
-        content: response.content,
-        createdAt: response.createdAt,
-      };
-      setMessages((current) => [...current, assistantMessage]);
     } catch (error) {
       console.error("Story chat request failed:", error);
       setChatError(
@@ -186,30 +208,11 @@ export const CreateStoryPage = () => {
     }
   };
 
-  const handleStartOver = () => {
-    setMessages([]);
-    setDraft("");
-    setChatError(null);
-  };
-
   return (
     <>
       <PageHeading
         title="Create a story"
         description="Pick a category, how many episodes, and how long each one runs. Then describe your idea and refine it with Gemini."
-        action={
-          isSetupLocked && (
-            <Button
-              variant="outlined"
-              color="inherit"
-              startIcon={<RotateCcw size={16} />}
-              onClick={handleStartOver}
-              disabled={isReplying}
-            >
-              Start over
-            </Button>
-          )
-        }
       />
 
       <div className="story-layout">
@@ -228,32 +231,15 @@ export const CreateStoryPage = () => {
                 fullWidth
                 size="small"
                 label="Category"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                disabled={isSetupLocked || isCategoriesLoading}
-                error={isCategoriesError}
-                helperText={
-                  isCategoriesError
-                    ? "Categories couldn't be loaded."
-                    : category?.description
-                }
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
               >
-                {isCategoriesLoading && (
-                  <MenuItem value="" disabled>
-                    Loading categories…
-                  </MenuItem>
-                )}
-                {categories.map((c) => (
-                  <MenuItem key={c.id} value={String(c.id)}>
+                {mockCategories.map((c) => (
+                  <MenuItem key={c.name} value={String(c.name)}>
                     {c.name}
                   </MenuItem>
                 ))}
               </TextField>
-              {isCategoriesError && (
-                <Button size="small" onClick={() => void refetchCategories()}>
-                  Try again
-                </Button>
-              )}
             </li>
 
             <li
@@ -267,7 +253,7 @@ export const CreateStoryPage = () => {
                 label="Episodes"
                 value={episodeChoice}
                 onChange={(e) => setEpisodeChoice(e.target.value)}
-                disabled={isSetupLocked || !isEpisodesUnlocked}
+                disabled={!isEpisodesUnlocked}
               >
                 {EPISODE_OPTIONS.map((n) => (
                   <MenuItem key={n} value={String(n)}>
@@ -284,7 +270,6 @@ export const CreateStoryPage = () => {
                   label="Custom episodes"
                   value={customEpisodes}
                   onChange={(e) => setCustomEpisodes(e.target.value)}
-                  disabled={isSetupLocked}
                   error={customEpisodes !== "" && episodeCount === null}
                   helperText={`Whole number from ${EPISODE_LIMITS.min} to ${EPISODE_LIMITS.max}`}
                   slotProps={{
@@ -305,7 +290,7 @@ export const CreateStoryPage = () => {
                 label="Duration"
                 value={durationChoice}
                 onChange={(e) => setDurationChoice(e.target.value)}
-                disabled={isSetupLocked || !isDurationUnlocked}
+                disabled={!isDurationUnlocked}
               >
                 {DURATION_OPTIONS.map((s) => (
                   <MenuItem key={s} value={String(s)}>
@@ -322,8 +307,7 @@ export const CreateStoryPage = () => {
                   label="Custom duration (seconds)"
                   value={customDuration}
                   onChange={(e) => setCustomDuration(e.target.value)}
-                  disabled={isSetupLocked}
-                  error={customDuration !== "" && episodeDurationSec === null}
+                  error={customDuration !== "" && episodeDurationInSec === null}
                   helperText={`Whole number from ${DURATION_LIMITS.min} to ${DURATION_LIMITS.max}`}
                   slotProps={{
                     htmlInput: DURATION_LIMITS,
@@ -332,12 +316,6 @@ export const CreateStoryPage = () => {
               )}
             </li>
           </ol>
-          {isSetupLocked && (
-            <p className="story-setup-note">
-              <Lock size={14} aria-hidden="true" />
-              Setup is locked while you chat. Start over to change it.
-            </p>
-          )}
         </Paper>
 
         <Paper
@@ -354,7 +332,7 @@ export const CreateStoryPage = () => {
               <h2 id="story-chat-title">Gemini story assistant</h2>
               <p>
                 {setup && category
-                  ? `${category.name}, ${setup.episodeCount} ${setup.episodeCount === 1 ? "episode" : "episodes"}, ${formatDuration(setup.episodeDurationSec)} each`
+                  ? `${category}, ${setup.episodeCount} ${setup.episodeCount === 1 ? "episode" : "episodes"}, ${formatDuration(setup.episodeDurationInSec)} each`
                   : "Finish the setup to start chatting"}
               </p>
             </div>
@@ -377,15 +355,6 @@ export const CreateStoryPage = () => {
                 the setting, and the twist or ending you have in mind.
               </div>
             )}
-
-            {messages.map((m) => (
-              <div key={m.id} className={`chat-bubble chat-bubble-${m.role}`}>
-                <span className="visually-hidden">
-                  {m.role === "user" ? "You:" : "Gemini:"}
-                </span>
-                {m.content}
-              </div>
-            ))}
 
             {isReplying && (
               <div className="chat-bubble chat-bubble-assistant chat-typing">
@@ -433,6 +402,20 @@ export const CreateStoryPage = () => {
           </form>
         </Paper>
       </div>
+      <TicketTitanModal
+        open={isRedirectModalOpen}
+        onClose={handleRedirect}
+        title={
+          "Session Generated. Redirecting you to the session details page..."
+        }
+        acceptButtonText="Redirect Now"
+        onAccept={handleRedirect}
+        onCancel={handleRedirect}
+      >
+        <>
+          <Box>Redirecting you in {secondsLeft}...</Box>
+        </>
+      </TicketTitanModal>
     </>
   );
 };

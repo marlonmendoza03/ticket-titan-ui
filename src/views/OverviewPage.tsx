@@ -4,7 +4,6 @@ import { Link } from "react-router";
 import { ROUTES } from "../routes/paths";
 import { PageHeading } from "../components/PageHeading";
 import { TicketTable } from "../components/TicketTable";
-import { sampleTickets } from "../data/ticketSamples";
 
 export const OverviewPage = () => (
   <>
@@ -57,7 +56,7 @@ export const OverviewPage = () => (
           View all tickets
         </Link>
       </div>
-      <TicketTable tickets={sampleTickets.slice(0, 4)} />
+      <TicketTable />
     </section>
   </>
 );

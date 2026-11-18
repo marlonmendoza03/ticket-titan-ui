@@ -1,5 +1,4 @@
 export interface CategoryDto {
-  id: number;
   name: string;
   description: string;
   isActive: boolean;
@@ -7,26 +6,34 @@ export interface CategoryDto {
 
 export type ChatRole = "user" | "assistant";
 
-export interface ChatMessage {
-  id: string;
-  role: ChatRole;
-  content: string;
-  createdAt: string;
-}
-
 export interface StorySetup {
-  categoryId: number;
+  category: string;
   episodeCount: number;
-  episodeDurationSec: number;
+  episodeDurationInSec: number;
 }
 
 export interface StoryChatRequest {
-  setup: StorySetup;
-  messages: ChatMessage[];
+  messages: StoryChatMessageDto[];
 }
 
 export interface StoryChatResponse {
   content: string;
   role: string | null;
   createdAt: string;
+}
+
+export interface StoryChatMessageDto {
+  role: "User" | "Assistant";
+  content: string;
+  storySetup?: StorySetup;
+}
+
+export interface StoryChatSessionDto {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  messages: StoryChatMessageDto[];
+  storySetup?: StorySetup;
 }

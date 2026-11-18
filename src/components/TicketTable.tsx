@@ -1,65 +1,128 @@
-import { Chip, Paper } from "@mui/material";
-import { ArrowUpRight } from "lucide-react";
-import { Link } from "react-router";
-import { sampleTickets, type TicketRow } from "../data/ticketSamples";
+import { Link, Paper } from "@mui/material";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { useMemo } from "react";
+import { useGetChatSessionsQuery } from "../api/storyApi";
+import dayjs from "dayjs";
 
-interface TicketTableProps {
-  tickets?: TicketRow[];
-}
+const columns: GridColDef[] = [
+  {
+    field: "id",
+    headerName: "ID",
+    flex: 1,
+    minWidth: 70,
+    sortable: true,
+    renderCell: (params) => {
+      return params.value;
+    },
+  },
+  {
+    field: "title",
+    headerName: "Title",
+    flex: 2,
+    minWidth: 150,
+    sortable: true,
+  },
+  {
+    field: "category",
+    headerName: "Category",
+    flex: 0.5,
+    minWidth: 100,
+    sortable: true,
+  },
+  {
+    field: "episodeCount",
+    headerName: "Episodes",
+    flex: 0.5,
+    minWidth: 75,
+    sortable: true,
+  },
+  {
+    field: "episodeDurationInSec",
+    headerName: "Duration",
+    flex: 0.5,
+    minWidth: 80,
+    sortable: true,
+  },
+  {
+    field: "createdAt",
+    headerName: "Created On",
+    flex: 2,
+    minWidth: 100,
+    sortable: true,
+  },
+  {
+    field: "updatedAt",
+    headerName: "Last Updated",
+    flex: 2,
+    minWidth: 100,
+    sortable: true,
+  },
+  {
+    field: "actions",
+    headerName: "Open Session",
+    flex: 1,
+    minWidth: 100,
+    sortable: false,
+    renderCell: (params) => {
+      return (
+        <Link
+          href={`/tickets/${params.row.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Navigate
+        </Link>
+      );
+    },
+  },
+];
 
-export const TicketTable = ({ tickets = sampleTickets }: TicketTableProps) => (
-  <Paper className="ticket-table-paper" elevation={0}>
-    <div className="table-scroll">
-      <table className="ticket-table">
-        <thead>
-          <tr>
-            <th scope="col">Ticket</th>
-            <th scope="col">Requester</th>
-            <th scope="col">Category</th>
-            <th scope="col">Status</th>
-            <th scope="col">Updated</th>
-            <th scope="col">
-              <span className="visually-hidden">Open ticket</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.map((ticket) => (
-            <tr key={ticket.id}>
-              <td>
-                <Link
-                  className="ticket-subject"
-                  to={`/tickets/${ticket.id}`}
-                >
-                  <span className="ticket-id">#{ticket.id}</span>
-                  <span>{ticket.subject}</span>
-                </Link>
-              </td>
-              <td>{ticket.requester}</td>
-              <td>{ticket.category}</td>
-              <td>
-                <Chip
-                  label={ticket.status}
-                  size="small"
-                  className={`status-chip status-${ticket.status
-                    .toLowerCase()
-                    .replaceAll(" ", "-")}`}
-                />
-              </td>
-              <td>{ticket.updated}</td>
-              <td>
-                <Link
-                  className="ticket-open-link"
-                  to={`/tickets/${ticket.id}`}
-                  aria-label={`View ticket ${ticket.id}`}
-                >
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </Paper>
-);
+export const TicketTable = () => {
+  const { data: sessions, isLoading } = useGetChatSessionsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+  const chatSessions = useMemo(() => {
+    if (!sessions || isLoading) return [];
+    const seenTitles = new Set<string>();
+    const filteredSessions = sessions.filter((session) => {
+      if (seenTitles.has(session.title)) {
+        return false;
+      }
+      seenTitles.add(session.title);
+      return true;
+    });
+
+    return filteredSessions.map((session) => {
+      const [category, episodeCount, episodeDurationInSec] =
+        session.title.split("|");
+      return {
+        id: session.id,
+        title: session.title,
+        category: category,
+        episodeCount: episodeCount.replace("Number of Episodes:", " "),
+        episodeDurationInSec: episodeDurationInSec.replace(
+          "Duration per Episode:",
+          " ",
+        ),
+        createdAt: dayjs(session.createdAt).format("ddd MMM-DD-YYYY h:mm A"),
+        updatedAt: dayjs(session.updatedAt).format("ddd MM-DD-YYYY h:mm A"),
+      };
+    });
+  }, [isLoading, sessions]);
+
+  return (
+    <Paper className="ticket-table-paper" elevation={0}>
+      <div className="table-scroll">
+        <DataGrid
+          rows={chatSessions}
+          columns={columns}
+          localeText={{
+            noRowsLabel: "No session available right now",
+            noResultsOverlayLabel: "No matching records found",
+          }}
+          loading={isLoading}
+        />
+      </div>
+    </Paper>
+  );
+};

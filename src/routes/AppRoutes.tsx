@@ -15,7 +15,11 @@ const RequireAuth = () => {
 
   if (isLoading) {
     return (
-      <div className="route-loading" role="status" aria-label="Checking sign-in">
+      <div
+        className="route-loading"
+        role="status"
+        aria-label="Checking sign-in"
+      >
         <Loading />
       </div>
     );
