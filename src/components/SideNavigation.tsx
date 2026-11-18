@@ -11,7 +11,7 @@ export const SideNavigation = () => {
       label: "All tickets",
       to: ROUTES.Tickets,
       icon: ClipboardList,
-      end: false,
+      end: true,
     },
     ...(sessionId
       ? [

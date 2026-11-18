@@ -67,7 +67,7 @@ const columns: GridColDef[] = [
       return (
         <Link
           href={`/tickets/${params.row.id}`}
-          target="_blank"
+          target="_self"
           rel="noopener noreferrer"
         >
           Navigate
