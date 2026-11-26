@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { StoryChatMessageDto, StoryChatSessionDto } from "../types/story";
+import type { StoryChatMessageDto, StoryChatSessionDto, StoryAttachmentDto } from "../types/story";
 import { API_BASE_URL } from "./api";
 
 // Endpoints use mocked `queryFn`s until the backend exposes
@@ -11,7 +11,7 @@ export const storyApi = createApi({
     baseUrl: API_BASE_URL,
     timeout: 30000,
   }),
-  tagTypes: ["Category", "Session"],
+  tagTypes: ["Category", "Session", "Attachment"],
   endpoints: (builder) => ({
     //Decommissioning these APIs
     // getCategories: builder.query<CategoryDto[], void>({
@@ -86,8 +86,8 @@ export const storyApi = createApi({
           "X-CSRF-TOKEN": token,
         },
         body: request,
-        invalidatesTags: ["Session"],
       }),
+      invalidatesTags: ["Session"],
     }),
     sendInitialMessage: builder.mutation<
       StoryChatSessionDto,
@@ -113,6 +113,58 @@ export const storyApi = createApi({
         invalidatesTags: ["Session"],
       }),
     }),
+    approveSession: builder.mutation<
+      StoryChatSessionDto,
+      { sessionId: string; token: string }
+    >({
+      query: ({ sessionId, token }) => ({
+        url: `api/story-chat/sessions/${sessionId}/approve`,
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": token,
+        },
+      }),
+      invalidatesTags: ["Session"],
+    }),
+    uploadAttachment: builder.mutation<
+      StoryAttachmentDto,
+      { sessionId: string; token: string; formData: FormData }
+    >({
+      query: ({ sessionId, token, formData }) => ({
+        url: `api/story-chat/sessions/${sessionId}/attachments`,
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRF-TOKEN": token,
+        },
+        body: formData,
+      }),
+      invalidatesTags: ["Session", "Attachment"],
+    }),
+    getAttachments: builder.query<StoryAttachmentDto[], string>({
+      query: (sessionId: string) => ({
+        url: `api/story-chat/sessions/${sessionId}/attachments`,
+        method: "GET",
+        credentials: "include",
+      }),
+      providesTags: ["Attachment"],
+    }),
+    deleteAttachment: builder.mutation<
+      void,
+      { sessionId: string; attachmentId: string; token: string }
+    >({
+      query: ({ sessionId, attachmentId, token }) => ({
+        url: `api/story-chat/sessions/${sessionId}/attachments/${attachmentId}`,
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "X-CSRF-TOKEN": token,
+        },
+      }),
+      invalidatesTags: ["Session", "Attachment"],
+    }),
   }),
 });
 
@@ -124,4 +176,8 @@ export const {
   useSendMessageMutation,
   useGetChatSessionQuery,
   useSendInitialMessageMutation,
+  useApproveSessionMutation,
+  useUploadAttachmentMutation,
+  useGetAttachmentsQuery,
+  useDeleteAttachmentMutation,
 } = storyApi;

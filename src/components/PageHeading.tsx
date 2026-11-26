@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 interface PageHeadingProps {
   title: string;
-  description: string;
+  description: ReactNode;
   action?: ReactNode;
 }
 
@@ -14,7 +14,7 @@ export const PageHeading = ({
   <div className="page-heading">
     <div>
       <h1>{title}</h1>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
     </div>
     {action && <div className="page-heading-action">{action}</div>}
   </div>

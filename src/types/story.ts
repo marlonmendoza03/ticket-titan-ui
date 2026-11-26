@@ -28,6 +28,30 @@ export interface StoryChatMessageDto {
   storySetup?: StorySetup;
 }
 
+export interface StoryAttachmentDto {
+  id: string;
+  fileName: string;
+  type: "Character" | "Setting";
+  downloadUrl: string;
+  fileSize: number;
+  contentType?: string;
+  uploadedAt: string;
+}
+
+export interface UploadAttachmentRequest {
+  sessionId: string;
+  file: File;
+  type: "Character" | "Setting";
+}
+
+export const SessionStatus = {
+  Draft: 0,
+  AwaitingReferences: 1,
+  Approved: 2,
+} as const;
+
+export type SessionStatusType = typeof SessionStatus[keyof typeof SessionStatus];
+
 export interface StoryChatSessionDto {
   id: string;
   title: string;
@@ -36,4 +60,6 @@ export interface StoryChatSessionDto {
   messageCount: number;
   messages: StoryChatMessageDto[];
   storySetup?: StorySetup;
+  status: SessionStatusType;
+  attachments: StoryAttachmentDto[];
 }
